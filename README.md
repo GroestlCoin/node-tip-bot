@@ -1,15 +1,10 @@
 # Node Tip Bot Stable
 -----------------------
 
-# Donations
-* BTC `1B4LKCoH6mh4nMk4pgCArK9Apcnm8uLCto`
-* LTC `LaFX9Fbpqnasdw4fCFTtpsM3GLcy6WNnfP`
-* DOGE `DNv5GfUYnvqY9iTnKx531dzsG8ThoBd7ep`
-
 # Installation
 To install node-tip-bot simply clone this repo and install dependencies:
 ```bash
-git clone https://github.com/nrpatten/node-tip-bot
+git clone https://github.com/GroestlCoin/node-tip-bot
 cd node-tip-bot
 npm install
 ```
@@ -47,7 +42,7 @@ Logging settings.
 ## rpc
 JSON RPC API connection info.
 * **host** - JSON RPC API hostname
-* **port** - API port (by default 9332 for litecoin)
+* **port** - API port (by default 1441 for groestlcoin)
 * **user** - API username
 * **pass** - API password (keep that secure)
 
@@ -58,8 +53,8 @@ Basic coin settings.
 * **min_confirmations** - minimum amount of confirmations needed to tip/withdraw coins
 * **min_tip** - minimum amount of coins to tip
 * **min_rain** - minimum amount of coins to make rain
-* **short_name** - short coin's name (eg. `LTC`)
-* **full_name** - full coin's name (eg. `Litecoin`)
+* **short_name** - short coin's name (eg. `GRS`)
+* **full_name** - full coin's name (eg. `Groestlcoin`)
 
 ## git
 Basic git settings.
@@ -137,7 +132,7 @@ Whatever the bot says. Supports expandable variables (eg. `%nick%` for bot's nic
 Every nickname has it's own account in your wallet. When tipping or withdrawing, bot checks if user is registered and identified with NickServ. If so, he moves the money from one account to another, or when withdrawing, transfers coins to other wallet.
 
 # How to run it?
-Before running the bot, you have to be running your coin daemon with JSON-RPC API enabled. To enable, add this to your coin daemon configuration file (eg. `~/.litecoin/litcoin.conf`):
+Before running the bot, you have to be running your coin daemon with JSON-RPC API enabled. To enable, add this to your coin daemon configuration file (eg. `~/.groestlcoin/groestlcoin.conf`):
 ```ini
 server=1
 daemon=1
