@@ -154,34 +154,6 @@ if (settings.git.enabled) {
 } else {
 }
 
-// connect to the push API of Poloniex (requires autobahn): 
-var wsuri = "wss://api.poloniex.com";
-var connection = new autobahn.Connection({
-  url: wsuri,
-  realm: "realm1"
-});
-
-connection.onopen = function (session) {
-	function marketEvent (args,kwargs) {
-		console.log(args);
-	}
-	function tickerEvent (args,kwargs) {
-		console.log(args);
-	}
-	function trollboxEvent (args,kwargs) {
-		console.log(args);
-	}
-	session.subscribe('BTC_XMR', marketEvent);
-	session.subscribe('ticker', tickerEvent);
-	session.subscribe('trollbox', trollboxEvent);
-}
-
-connection.onclose = function () {
-  console.log("Websocket connection closed");
-}
-		       
-connection.open();
-
 // gets user's login status
 irc.Client.prototype.isIdentified = function(nickname, callback) {
     // request login status
@@ -410,41 +382,33 @@ client.addListener('message', function(from, channel, message) {
                 break;
 
             case 'ticker':
-                if (settings.allcoin.enabled) {
-                    var match = message.match(/^.?ticker (\S+)$/);
-                    if (match === null) {
-                        var user = from.toLowerCase();
-                        tipbot.sendCustomRequest(allcoin, function(data) {
-                            var info = data;
-                            client.say(channel, settings.messages.ticker.expand({
-                                name: user,
-                                coin: settings.allcoin.coin,
-                                trade_price: info.data.trade_price,
-                                exchange_volume: info.data.exchange_volume,
-                                type_volume: info.data.type_volume
-                            }));
-                        });
-                    } else {
-                        var user = from.toLowerCase();
-                        var str = match[1];
-                        tipbot.sendCustomRequest(allcoin2 + str + '_BTC', function(data, error) {
-                            var info = data;
-                            if (error || info.code === 0) {
-                                client.say(channel, settings.messages.tickererr.expand({
-                                    name: user,
-                                    coin: str
-                                }));
-                                return;
-                            }
-                            client.say(channel, settings.messages.ticker.expand({
-                                name: user,
-                                coin: str,
-                                trade_price: info.data.trade_price,
-                                exchange_volume: info.data.exchange_volume,
-                                type_volume: info.data.type_volume
-                            }));
-                        });
-                    }
+                if (settings.poloniex.enabled) {
+                var wsuri = "wss://api.poloniex.com";
+		var connection = new autobahn.Connection({
+  		url: wsuri,
+  		realm: "realm1"
+		});
+
+		connection.onopen = function (session) {
+		function marketEvent (args,kwargs) {
+		console.log(args);
+		}
+		function tickerEvent (args,kwargs) {
+		console.log(args);
+		}
+		function trollboxEvent (args,kwargs) {
+		console.log(args);
+		}
+		session.subscribe('BTC_GRS', marketEvent);
+		session.subscribe('ticker', tickerEvent);
+		session.subscribe('trollbox', trollboxEvent);
+		}
+
+		connection.onclose = function () {
+  		console.log("Websocket connection closed");
+		}
+		       
+		connection.open();
                 } else {
                     return;
                 }
