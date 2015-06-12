@@ -4,9 +4,8 @@ var irc = require('irc'),
     yaml = require('js-yaml'),
     coin = require('node-altcoin'),
     tipbot = require('node-tipbot-api'),
-    webadmin = require('../lib/webadmin/app'),
-    autobahn = require('autobahn');
-
+    webadmin = require('../lib/webadmin/app');
+    
 // check if the config file exists
 if (!fs.existsSync('./config/config.yml')) {
     winston.error('Configuration file doesn\'t exist! Please read the README.md file first.');
@@ -382,33 +381,41 @@ client.addListener('message', function(from, channel, message) {
                 break;
 
             case 'ticker':
-                if (settings.poloniex.enabled) {
-                var wsuri = "wss://api.poloniex.com";
-		var connection = new autobahn.Connection({
-  		url: wsuri,
-  		realm: "realm1"
-		});
-
-		connection.onopen = function (session) {
-		function marketEvent (args,kwargs) {
-		console.log(args);
-		}
-		function tickerEvent (args,kwargs) {
-		console.log(args);
-		}
-		function trollboxEvent (args,kwargs) {
-		console.log(args);
-		}
-		session.subscribe('BTC_GRS', marketEvent);
-		session.subscribe('ticker', tickerEvent);
-		session.subscribe('trollbox', trollboxEvent);
-		}
-
-		connection.onclose = function () {
-  		console.log("Websocket connection closed");
-		}
-		       
-		connection.open();
+                if (settings.allcoin.enabled) {
+                    var match = message.match(/^.?ticker (\S+)$/);
+                    if (match === null) {
+                        var user = from.toLowerCase();
+                        tipbot.sendCustomRequest(allcoin, function(data) {
+                            var info = data;
+                            client.say(channel, settings.messages.ticker.expand({
+                                name: user,
+                                coin: settings.allcoin.coin,
+                                trade_price: info.data.trade_price,
+                                exchange_volume: info.data.exchange_volume,
+                                type_volume: info.data.type_volume
+                            }));
+                        });
+                    } else {
+                        var user = from.toLowerCase();
+                        var str = match[1];
+                        tipbot.sendCustomRequest(allcoin2 + str + '_BTC', function(data, error) {
+                            var info = data;
+                            if (error || info.code === 0) {
+                                client.say(channel, settings.messages.tickererr.expand({
+                                    name: user,
+                                    coin: str
+                                }));
+                                return;
+                            }
+                            client.say(channel, settings.messages.ticker.expand({
+                                name: user,
+                                coin: str,
+                                trade_price: info.data.trade_price,
+                                exchange_volume: info.data.exchange_volume,
+                                type_volume: info.data.type_volume
+                            }));
+                        });
+                    }
                 } else {
                     return;
                 }
