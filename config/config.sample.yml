@@ -5,8 +5,8 @@ connection:
   status_command: ACC
   debug: false
 login: 
-  nickname: groestltip
-  username: groestltip
+  nickname: GroestlTip
+  username: GroestlTip
   realname: node.js rpc tipping bot
   nickserv_password: yourpass
 channels: 
