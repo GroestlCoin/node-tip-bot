@@ -37,8 +37,6 @@ urlget:
 joke:
   enabled: true
   url: http://api.icndb.com/jokes/random
-poloniex:
-  enabled: true
 random:
   enabled: true
   url: http://www.iheartquotes.com/api/v1/random?format=json&max_lines=1
