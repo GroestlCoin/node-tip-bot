@@ -88,40 +88,6 @@ Enable or Disable the bot from saying a random quote with the !random command.
 * Options - 
  * `enabled: true or false`
 
-## allcoin
-Enable or Disable the bot from saying your Allcoin coin price with !ticker.
-* Options -
- * `enabled: true or false`
- * `coin: DRS` Your coins short name
- * `url: https://www.allcoin.com/api2/pair/DRS_BTC` Your coins Allcoin api link
-
-## allcoin2
-* Options none
-  * `url: https://www.allcoin.com/api2/pair/` Dont touch this link 
-
-## bittrex
-Enable or Disable the bot from saying your Allcoin coin price with !ticker.
-* Options -
- * `enabled: true or false`
- * `coin: DOPE` Your coins short name
- * `url: https://www.allcoin.com/api2/pair/DRS_DOPE` Your coins Allcoin api link
-
-## bittrex2
-* Options none
-  * `url: https://bittrex.com/api/v1.1/public/getmarketsummary?market=` Dont touch this link
-
-## cryptsy
-Enable or Disable the bot from saying your Cryptsy coin price with !ticker2.
-* Options - 
- * `enabled: true or false`
- * `coin: FST` Your coins short name 
- * `url: http://pubapi.cryptsy.com/api.php?method=singlemarketdata&marketid=44` Your coins Cryptsy api link
-
-## btc
-Enable or Disable the bot from saying btc price ticker with !btc.
-* Options - 
- * `enabled: true or false`
-
 ## commands
 Here you can restrict some commands to work only on PM/channel.
 
@@ -160,10 +126,7 @@ sudo apt-get install python-software-properties python g++ make nodejs
 ## Edits
 * To change the ticker for your coin edit -
  * `config/config.yml` line `39 - 50`
- * And add your own Cryptsy, AllCoin and BTC-e coin ticker link.
-* Currently only supports Cryptsy, AllCoin and BTC-e.
  * See `config/config.yml` line `33 - 50`, `61 -75`, `104 -108`
- * And bin/tipbot.js `267` to `351` to add your own exchange json.
 
 ## Commands
 
@@ -178,10 +141,6 @@ sudo apt-get install python-software-properties python g++ make nodejs
 | `diff`      |                   | displays the current network difficulty                                           |
 | `block`     |                   | displays the current network block                                                |
 | `info`      |                   | displays the current network hashpersec/difficulty/block auto switch              |
-| `ticker`    | `<coin> or none`  | displays the current Allcoin coin price use an arg, (!ticker DOPE)                |
-| `bittrex`   | `<coin> or none`  | displays the current BitTrex coin price use an arg, (!bittrex CANN)               |
-| `cryptsy`   |                   | displays the current Crypsty coin price                                           | 
-| `btc`       |                   | displays the current BTC-e BTC price                                              |
 | `joke`      |                   | displays a random joke                                                            | 
 | `random`    |                   | displays a random quote                                                           |
 | `help`      |                   | displays configured help message (by default similiar to this one)                |
