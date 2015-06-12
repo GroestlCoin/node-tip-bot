@@ -14,8 +14,7 @@
     "request": "2.45.0",
     "node-regexp": "0.1.1",
     "cheerio": "0.17.0",
-    "githubhook": "1.1.3",
-    "autobahn": "0.9.6"
+    "githubhook": "1.1.3"
   },
   "devDependencies": {},
   "scripts": {
