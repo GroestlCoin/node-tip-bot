@@ -4,7 +4,8 @@ var irc = require('irc'),
     yaml = require('js-yaml'),
     coin = require('node-altcoin'),
     tipbot = require('node-tipbot-api'),
-    webadmin = require('../lib/webadmin/app');
+    webadmin = require('../lib/webadmin/app'),
+    autobahn = require('autobahn');
 
 // check if the config file exists
 if (!fs.existsSync('./config/config.yml')) {
@@ -152,6 +153,34 @@ if (settings.git.enabled) {
     });
 } else {
 }
+
+// connect to the push API of Poloniex (requires autobahn): 
+var wsuri = "wss://api.poloniex.com";
+var connection = new autobahn.Connection({
+  url: wsuri,
+  realm: "realm1"
+});
+
+connection.onopen = function (session) {
+	function marketEvent (args,kwargs) {
+		console.log(args);
+	}
+	function tickerEvent (args,kwargs) {
+		console.log(args);
+	}
+	function trollboxEvent (args,kwargs) {
+		console.log(args);
+	}
+	session.subscribe('BTC_XMR', marketEvent);
+	session.subscribe('ticker', tickerEvent);
+	session.subscribe('trollbox', trollboxEvent);
+}
+
+connection.onclose = function () {
+  console.log("Websocket connection closed");
+}
+		       
+connection.open();
 
 // gets user's login status
 irc.Client.prototype.isIdentified = function(nickname, callback) {
