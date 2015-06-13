@@ -4,6 +4,7 @@ var irc = require('irc'),
     yaml = require('js-yaml'),
     coin = require('node-altcoin'),
     tipbot = require('node-tipbot-api'),
+    request  = require('request')
     webadmin = require('../lib/webadmin/app');
     
 // check if the config file exists
@@ -920,6 +921,28 @@ client.addListener('message', function(from, channel, message) {
                     }
                     })
                     break;
+         case 'price':
+                var polourl = 'https://poloniex.com/public?command=returnTicker';
+                var poloprice;
+ 
+                function getPoloPrice(callback) {
+                    request(polourl, function (error, response, body) {
+                        if (!error && response.statusCode == 200) {
+                        poloprice = JSON.parse(body).BTC_GRS.last;
+                    }
+                        else {poloprice = 0.0;}
+                        poloCallback();
+                    });
+                }
+        function poloCallback() {
+            client.say(channel, "Poloniex price: " + Number(poloprice).toFixed(8) + " BTC/GRS");
+        }
+        function getPrices() {
+            getPoloPrice(poloCallback);
+        }
+        getPrices();
+        break;
+        
         case 'withdraw':
                 var match = message.match(/^.?withdraw (\S+)$/);
                 if (match === null) {
