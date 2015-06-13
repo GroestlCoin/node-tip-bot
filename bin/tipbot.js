@@ -834,93 +834,93 @@ client.addListener('message', function(from, channel, message) {
                 });
                 break;
 
-            case 'dice':
-                    var match = message.match(/^.?dice ([\d\.]+) ?(10|5|2)?/);
-                    if(match == null || !match[1]) {
-                    client.say(channel, 'Usage: !dice <amount> [multiplier]\nmultiplier should be either 2, 5, or 10 (default 2)');
-                    return;
-                    }
-                    // console.log(match);
-                    // console.log(match[1]);
-                    // console.log(match[2]);
-                    // console.log("Bot balance is: " + botBalance);
+        case 'dice':
+            var match = message.match(/^.?dice ([\d\.]+) ?(10|5|2)?/);
+            if(match == null || !match[1]) {
+            client.say(channel, 'Usage: !dice <amount> [multiplier]\nmultiplier should be either 2, 5, or 10 (default 2)');
+            return;
+            }
+            // console.log(match);
+            // console.log(match[1]);
+            // console.log(match[2]);
+            // console.log("Bot balance is: " + botBalance);
         
-                    var maxBet = Math.floor(0.01*botBalance);
+        var maxBet = Math.floor(0.01*botBalance);
         
-                    var amount = Number(match[1]);
-                    if (Number(match[2])) {
-                    var multiplier = Number(match[2]);
-                    } else {
-                    var multiplier = 2;
-                    }
+        var amount = Number(match[1]);
+        if (Number(match[2])) {
+            var multiplier = Number(match[2]);
+        } else {
+            var multiplier = 2;
+        }
 
-                    if(isNaN(amount)) {
-                    client.say(channel, settings.messages.invalid_amount.expand({name: from, amount: match[2]}));
-                    return;
-                    }
+        if(isNaN(amount)) {
+          client.say(channel, settings.messages.invalid_amount.expand({name: from, amount: match[2]}));
+          return;
+        }
 
-                    if(amount > maxBet) {
-                    client.say(channel, "Max bet is " + maxBet + ' ' + settings.coin.short_name);
-                    return;
-                    }
+        if(amount > maxBet) {
+          client.say(channel, "Max bet is " + maxBet + ' ' + settings.coin.short_name);
+          return;
+        }
         
-                    // lock
-                    if(locks.hasOwnProperty(from.toLowerCase()) && locks[from.toLowerCase()]) return;
-                    locks[from.toLowerCase()] = true;
+        // lock
+        if(locks.hasOwnProperty(from.toLowerCase()) && locks[from.toLowerCase()]) return;
+        locks[from.toLowerCase()] = true;
         
-                    coin.getBalance(settings.rpc.prefix + from.toLowerCase(), settings.coin.min_confirmations, function(err, balance) {
-                    if(err) {
-                    locks[from.toLowerCase()] = null;          
-                    winston.error('Error in !dice command.', err);
-                    client.say(channel, settings.messages.error.expand({name: from}));
-                    return;
-                    }
-                    var balance = typeof(balance) == 'object' ? balance.result : balance;
+        coin.getBalance(settings.rpc.prefix + from.toLowerCase(), settings.coin.min_confirmations, function(err, balance) {
+          if(err) {
+            locks[from.toLowerCase()] = null;          
+            winston.error('Error in !dice command.', err);
+            client.say(channel, settings.messages.error.expand({name: from}));
+            return;
+          }
+          var balance = typeof(balance) == 'object' ? balance.result : balance;
 
-                    if(balance >= amount) {
-                    console.log(amount, multiplier);
-                    var roll = Math.random();
+          if(balance >= amount) {
+            console.log(amount, multiplier);
+            var roll = Math.random();
             
-                    if (roll < (1/multiplier - 0.01)) {
-                    if (multiplier == 2) {
-                    var winnings = amount;
-                    } else {
-                    var winnings = amount*multiplier;
-                    }
-                    coin.send('move', settings.rpc.prefix + settings.login.nickname, settings.rpc.prefix + from.toLowerCase(), winnings, function(err, reply) {
-                    locks[from.toLowerCase()] = null;
-                    if(err || !reply) {
-                    winston.error('Error in !dice command', err);
-                    client.say(channel, settings.messages.error.expand({name: from}));
-                    return;
-                    }
+            if (roll < (1/multiplier - 0.01)) {
+              if (multiplier == 2) {
+                  var winnings = amount;
+              } else {
+                  var winnings = amount*multiplier;
+              }
+              coin.send('move', settings.rpc.prefix + settings.login.nickname, settings.rpc.prefix + from.toLowerCase(), winnings, function(err, reply) {
+              locks[from.toLowerCase()] = null;
+              if(err || !reply) {
+                winston.error('Error in !dice command', err);
+                client.say(channel, settings.messages.error.expand({name: from}));
+                return;
+              }
 
-                    winston.info('%s transferred %s %d %s', settings.login.nickname, from, winnings, settings.coin.short_name)
-                    client.say(channel, from + ' rolled ' + Number(roll).toFixed(4) + ' on target of ' + Number(1/multiplier - 0.01).toFixed(2) + '...win ' + winnings + ' ' + settings.coin.short_name + ' !');
-                    });
-                    }
+              winston.info('%s transferred %s %d %s', settings.login.nickname, from, winnings, settings.coin.short_name)
+              client.say(channel, from + ' rolled ' + Number(roll).toFixed(4) + ' on target of ' + Number(1/multiplier - 0.01).toFixed(2) + '...win ' + winnings + ' ' + settings.coin.short_name + ' !');
+              });
+            }
             
-                    else {
-                    coin.send('move', settings.rpc.prefix + settings.rpc.prefix + from.toLowerCase(), settings.login.nickname, amount, function(err, reply) {
-                    locks[from.toLowerCase()] = null;
-                    if(err || !reply) {
-                    winston.error('Error in !dice command', err);
-                    client.say(channel, settings.messages.error.expand({name: from}));
-                    return;
-                    }
+            else {
+              coin.send('move', settings.rpc.prefix + settings.rpc.prefix + from.toLowerCase(), settings.login.nickname, amount, function(err, reply) {
+              locks[from.toLowerCase()] = null;
+              if(err || !reply) {
+                winston.error('Error in !dice command', err);
+                client.say(channel, settings.messages.error.expand({name: from}));
+                return;
+              }
 
-                    winston.info('%s transferred %s %d %s', from, settings.login.nickname, amount, settings.coin.short_name)
-                    client.say(channel, from + " rolled " + Number(roll).toFixed(4) + " on target of " + Number(1/multiplier - 0.01).toFixed(2) + "...lose " + amount + " MYR!"); 
-                    });
-                    }
-                    }  
-                    else {
-                    locks[from.toLowerCase()] = null;
-                    winston.info('%s tried to roll %d, but has only %d', from, amount, balance);
-                    client.say(channel, settings.messages.no_funds.expand({name: from, balance: balance, short: amount - balance, amount: amount}));
-                    }
-                    })
-                    break;
+              winston.info('%s transferred %s %d %s', from, settings.login.nickname, amount, settings.coin.short_name)
+              client.say(channel, from + " rolled " + Number(roll).toFixed(4) + " on target of " + Number(1/multiplier - 0.01).toFixed(2) + "...lose " + amount + " MYR!"); 
+              });
+            }
+          }  
+          else {
+            locks[from.toLowerCase()] = null;
+            winston.info('%s tried to roll %d, but has only %d', from, amount, balance);
+            client.say(channel, settings.messages.no_funds.expand({name: from, balance: balance, short: amount - balance, amount: amount}));
+          }
+        })
+        break;
          case 'price':
                 var polourl = 'https://poloniex.com/public?command=returnTicker';
                 var poloprice;
