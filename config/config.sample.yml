@@ -192,7 +192,7 @@ messages:
     - '!block - displays the current network block'
     - '!info - displays the current network hashpersec, difficulty, block'
     - '!joke - displays a joke'
-    - '!joke - displays a joke'
+    - '!price - displays a the current price'
     - '!dice - <amount> [multiplier] - play dice with myrbot, default multiplier is 2, use 5 or 10 for lower odds and higher reward (1% house edge)'
     - '!random - displays a random quote'
     - '!bot - displays info about the bot and where to download the source code.'
