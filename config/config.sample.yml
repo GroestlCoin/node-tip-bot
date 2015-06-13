@@ -127,6 +127,9 @@ commands:
   dice:
     pm: true
     channel: true
+  price:
+    pm: true
+    channel: true
 messages:
   ticker: '%name% The current %coin% price at Poloniex. %coin%/BTC: %trade_price% - Volume: BTC: %exchange_volume% - %coin%: %type_volume%'
   tickererr: '%name% There was an error in the request either the AIP is down or %coin% dose not exist on Poloniex'
