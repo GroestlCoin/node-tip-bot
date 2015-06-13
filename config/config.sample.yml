@@ -124,6 +124,9 @@ commands:
   bot:
     pm: true
     channel: true
+  dice:
+    pm: true
+    channel: true
 messages:
   ticker: '%name% The current %coin% price at Poloniex. %coin%/BTC: %trade_price% - Volume: BTC: %exchange_volume% - %coin%: %type_volume%'
   tickererr: '%name% There was an error in the request either the AIP is down or %coin% dose not exist on Poloniex'
@@ -186,6 +189,8 @@ messages:
     - '!block - displays the current network block'
     - '!info - displays the current network hashpersec, difficulty, block'
     - '!joke - displays a joke'
+    - '!joke - displays a joke'
+    - '!dice - <amount> [multiplier] - play dice with myrbot, default multiplier is 2, use 5 or 10 for lower odds and higher reward (1% house edge)'
     - '!random - displays a random quote'
     - '!bot - displays info about the bot and where to download the source code.'
     - '!terms - displays terms and conditions for using %nick%'
