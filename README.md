@@ -1,4 +1,4 @@
-# Node Tip Bot Stable
+# IRC GroestlTip
 -----------------------
 
 # Installation
