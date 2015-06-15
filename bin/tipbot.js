@@ -276,6 +276,23 @@ client.addListener('message', function(from, channel, message) {
 
         return;
     }
+    
+    // make the max bet size depend on the bot's balance
+    var balance;
+    var botBalance;
+    
+    coin.getBalance(settings.rpc.prefix + settings.login.nickname, settings.coin.min_confirmations, function(err, balance) {
+        if(err) {
+            locks[from.toLowerCase()] = null;  
+            winston.error('Error in !tip command.', err);
+            client.say(channel, settings.messages.error.expand({name: from}));
+            return;
+        }
+        if (balance) {
+            botBalance = typeof(balance) == 'object' ? balance.result : balance;
+            // console.log(botBalance);
+        }
+    })
 
     // if not that, message will be undefined for some reason
     // todo: find a fix for that
