@@ -96,7 +96,11 @@ commands:
     channel: false
   rain: 
     pm: false
-    channel: true      
+    channel: true     
+    rain_on_last_active: 0 # amount in seconds. rain tips will fall only on users active within x seconds. leave 0 for no such behavior.
+  rainall:
+    pm: false
+    channel: true
   balance:
     pm: true
     channel: true
@@ -127,6 +131,12 @@ commands:
   dice:
     pm: true
     channel: true
+  housebalance:
+    pm: true
+    channel: true
+  maxbet:
+    pm: true
+    channel: true
   price:
     pm: true
     channel: true
@@ -153,6 +163,7 @@ messages:
   tip_self: "Sorry %name%, you can't tip yourself!"
   invalid_amount: 'Sorry %name%, "%amount%" is not a correct amount.'
   rain: '%name% rained %amount% %short_name% upon %list%.' 
+  rainall: '%name% rained %amount%%short_name% upon %list%.'
   getdiff: 'Current Difficulty: %diff%'
   networkhps: 'Current Networkhps: %networkhps% KH/s'
   networmhps: 'Current Networkhps: %networkhps% MH/s'
@@ -187,12 +198,15 @@ messages:
     - '!withdraw <%full_name% address> - withdraws your whole wallet balance to specified address (you will be charged %withdrawal_fee% %short_name% withdrawal fee)'
     - '!tip <nick> <amount> - sends the specified amount of %full_name% to the specified nickname'
     - '!rain <amount> [max] - splits amount coins between max users or the whole channel'
+    - '!rainall <amount> - splits amount coins between users of the whole channel'
     - '!diff - displays the current network difficulty'
     - '!networkhps - displays the current network hashpersec'
     - '!block - displays the current network block'
     - '!info - displays the current network hashpersec, difficulty, block'
     - '!joke - displays a joke'
     - '!price - displays a the current price'
+    - '!maxbet - maximum amount coins that you can bet'
+    - '!housebalance - balance of the house'
     - '!dice - <amount> [multiplier] - play dice with groestltip, default multiplier is 2, use 5 or 10 for lower odds and higher reward (1% house edge)'
     - '!random - displays a random quote'
     - '!bot - displays info about the bot and where to download the source code.'
