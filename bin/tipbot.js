@@ -250,8 +250,11 @@ client.addListener('error', function(message) {
     winston.error('Received an error from IRC network: ', message);
 });
 
+var last_active = {};
 var locks = [];
+var inGame = [];
 client.addListener('message', function(from, channel, message) {
+    last_active[from] = Date.now();
     var match = message.match(/^(!?)(\S+)/);
     if (match === null) return;
     var prefix = match[1];
@@ -277,7 +280,10 @@ client.addListener('message', function(from, channel, message) {
         return;
     }
     
-    // make the max bet size depend on the bot's balance
+    // if not that, message will be undefined for some reason
+    // todo: find a fix for that
+    var msg = message;
+    
     var balance;
     var botBalance;
     
@@ -294,9 +300,6 @@ client.addListener('message', function(from, channel, message) {
         }
     })
 
-    // if not that, message will be undefined for some reason
-    // todo: find a fix for that
-    var msg = message;
     client.isIdentified(from, function(status) {
         var message = msg;
         // check if the sending user is logged in (identified) with nickserv
@@ -307,16 +310,21 @@ client.addListener('message', function(from, channel, message) {
             }));
             return;
         }
+        
+        // console.log(balance);
+        // console.log(locks);
+        
         switch (command) {
             case 'rain':
                 var match = message.match(/^.?rain ([\d\.]+) ?(\d+)?/);
-                if (match === null || !match[1]) {
+                if (match === null || !match[2]) {
                     client.say(channel, 'Usage: !rain <amount> [max people]');
                     return;
                 }
-
-                var amount = Number(match[1]);
-                var max = Number(match[2]);
+        
+                var random = match[1];    
+                var amount = Number(match[2]);
+                var max = Number(match[3]);
 
                 if (isNaN(amount)) {
                     client.say(channel, settings.messages.invalid_amount.expand({
@@ -326,6 +334,12 @@ client.addListener('message', function(from, channel, message) {
                     return;
                 }
 
+                if(random) {
+                  var min = settings.coin.min_rain;
+                  var maxAmount = amount;
+                  amount  = Math.floor(Math.random() * (maxAmount - min + 1)) + min;
+                }
+                    
                 if (isNaN(max) || max < 1) {
                     max = false;
                 } else {
@@ -347,6 +361,15 @@ client.addListener('message', function(from, channel, message) {
 
                     if (balance >= amount) {
                         client.getNames(channel, function(names) {
+                            // rain only on nicknames active within the last x seconds
+                            if(settings.commands.rain.rain_on_last_active) {
+                                for (var i = names.length - 1; i >= 0; i--) {
+                                    if(!last_active.hasOwnProperty(names[i]) || last_active[names[i]] + settings.commands.rain.rain_on_last_active * 1000 < Date.now()) {
+                                     names.splice(i, 1);
+                                    }
+                                };
+                            }
+                
                             // remove tipper from the list
                             names.splice(names.indexOf(from), 1);
                             names.splice(names.indexOf(client.nick), 1);
@@ -382,7 +405,7 @@ client.addListener('message', function(from, channel, message) {
                             client.say(channel, settings.messages.rain.expand({
                                 name: from,
                                 amount: amount / max,
-                                list: whole_channel ? 'the whole channel' : names.join(', ')
+                                list: (whole_channel && !settings.commands.rain.rain_on_last_active) 'the whole channel' : names.join(', ')
                             }));
                         });
                     } else {
@@ -398,6 +421,33 @@ client.addListener('message', function(from, channel, message) {
                 });
                 break;
 
+            case 'rainall':
+                var match = message.match(/^.?rainall (random)?([\d\.]+)/);
+                if(match == null || !match[2]) {
+                    client.say(channel, 'Usage: !rainall <amount>');
+                    return;
+                }
+                
+                var random = match[1];
+                var amount = Number(match[2]);
+                
+                if(isNaN(amount)) {
+                    client.say(channel, settings.messages.invalid_amount.expand({name: from, amount: match[2]}));
+                    return;
+                }
+
+                if(random) {
+                    var min = settings.coin.min_rain;
+                    var maxAmount = amount;
+                    amount  = Math.floor(Math.random() * (maxAmount - min + 1)) + min;
+                }
+                
+                if(isNaN(max) || max < 1) {
+                    max = false;
+                } else {
+                    max = Math.floor(max);
+                }
+                  
             case 'ticker':
                 if (settings.allcoin.enabled) {
                     var match = message.match(/^.?ticker (\S+)$/);
@@ -583,7 +633,8 @@ client.addListener('message', function(from, channel, message) {
                     return;
                 }
                 var to = match[1];
-                var amount = Number(match[2]);
+                var random = match[2]
+                var amount = Number(match[3]);
                 // lock
                 if(locks.hasOwnProperty(from.toLowerCase()) && locks[from.toLowerCase()]) return;
                 locks[from.toLowerCase()] = true;
@@ -592,9 +643,15 @@ client.addListener('message', function(from, channel, message) {
                     locks[from.toLowerCase()] = null;
                     client.say(channel, settings.messages.invalid_amount.expand({
                         name: from,
-                        amount: match[2]
+                        amount: match[3]
                     }));
                     return;
+                }
+                
+                if(random) {
+                    var min = settings.coin.min_tip;
+                    var max = ammount;
+                    amount = Math.floor(Math.random() * (max - min +1) + min;
                 }
 
                 if (to.toLowerCase() == from.toLowerCase()) {
@@ -627,22 +684,16 @@ client.addListener('message', function(from, channel, message) {
                     var balance = typeof(balance) == 'object' ? balance.result : balance;
 
                     if (balance >= amount) {
-                        coin.send('move', from.toLowerCase(), to.toLowerCase(), amount, function(err, reply) {
+                        coin.send('move', settings.rpc.prefix + from.toLowerCase(), settings.rpc.prefix + to.toLowerCase(), amount, function(err, reply) {
                             locks[from.toLowerCase()] = null;
-                            if (err || !reply) {
+                            if(err || !reply) {
                                 winston.error('Error in !tip command', err);
-                                client.say(channel, settings.messages.error.expand({
-                                    name: from
-                                }));
+                                client.say(channel, settings.messages.error.expand({name: from}));
                                 return;
                             }
-
-                            winston.info('%s tipped %s %d%s', from, to, amount, settings.coin.short_name);
-                            client.say(channel, settings.messages.tipped.expand({
-                                from: from,
-                                to: to,
-                                amount: amount
-                            }));
+                            
+                            winston.info('%s tipped %s %d %s', from, to, amount, settings.coin.short_name)
+                            client.say(channel, settings.messages.tipped.expand({from: from, to: to, amount: amount}));
                         });
                     } else {
                         locks[from.toLowerCase()] = null;
@@ -938,6 +989,17 @@ client.addListener('message', function(from, channel, message) {
           }
         })
         break;
+        
+        case 'housebalance':
+            var match = message.match(/^.?housebalance/);
+            client.say(channel, 'The houses\'s balance is currently: ' + botBalance + ' GRS');
+            break;
+            
+            case 'maxbet':
+                var match = message.match(/^.?maxbet/);
+                client.say(channel, 'The maximum bet (1% of house balance) is currently: ' + Math.floor(0.01*botBalance) + ' GRS')
+                break;
+                
          case 'price':
                 var polourl = 'https://poloniex.com/public?command=returnTicker';
                 var poloprice;
@@ -1043,4 +1105,15 @@ client.addListener('message', function(from, channel, message) {
                 break;
             }
       });
+});
+
+client.addListener('notice', function(nick, to, text, message) {
+    if(nick && nick.toLowerCase() == 'nickserv' && !text.match(/ ACC /)) {
+        winston.info('%s: %s', nick, text);
+        if(text.match(/^You are now identified/)) {
+            for (var i = settings.channels.length - 1; i >= 0; i--) {
+                client.join(settings.channels[i]);
+            };
+        }
+    }
 });
