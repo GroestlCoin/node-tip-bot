@@ -38,7 +38,7 @@ joke:
   enabled: true
   url: http://api.icndb.com/jokes/random
 random:
-  enabled: true
+  enabled: false
   url: http://www.iheartquotes.com/api/v1/random?format=json&max_lines=1
 allcoin:
   enabled: false
@@ -81,7 +81,7 @@ commands:
     channel: true
   random:
     pm: false
-    channel: true
+    channel: false
   ticker:
     pm: false
     channel: false
@@ -97,7 +97,7 @@ commands:
   rain: 
     pm: false
     channel: true     
-    rain_on_last_active: 0 # amount in seconds. rain tips will fall only on users active within x seconds. leave 0 for no such behavior.
+    rain_on_last_active: 3600 # amount in seconds. rain tips will fall only on users active within x seconds. leave 0 for no such behavior.
   rainall:
     pm: false
     channel: true
