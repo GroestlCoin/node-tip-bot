@@ -21,7 +21,7 @@ rpc:
 coin:
   withdrawal_fee: 0.02
   min_withdraw: 1
-  min_confirmations: 3
+  min_confirmations: 6
   min_tip: 1
   short_name: GRS
   full_name: Groestlcoin
@@ -128,15 +128,6 @@ commands:
   bot:
     pm: true
     channel: true
-  dice:
-    pm: true
-    channel: true
-  housebalance:
-    pm: true
-    channel: true
-  maxbet:
-    pm: true
-    channel: true
   price:
     pm: true
     channel: true
@@ -205,9 +196,6 @@ messages:
     - '!info - displays the current network hashpersec, difficulty, block'
     - '!joke - displays a joke'
     - '!price - displays a the current price'
-    - '!maxbet - maximum amount coins that you can bet'
-    - '!housebalance - balance of the house'
-    - '!dice - <amount> [multiplier] - play dice with groestltip, default multiplier is 2, use 5 or 10 for lower odds and higher reward (1% house edge)'
     - '!random - displays a random quote'
     - '!bot - displays info about the bot and where to download the source code.'
     - '!terms - displays terms and conditions for using %nick%'
