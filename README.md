@@ -143,7 +143,6 @@ sudo apt-get install python-software-properties python g++ make nodejs
 | `info`      |                   | displays the current network hashpersec/difficulty/block auto switch              |
 | `joke`      |                   | displays a random joke                                                            | 
 | `price`     |                   | displays a the current price                                                      |
-| `dice`      |                   | play dice with several multipliers (2, 5 or 10 and 1% house edge)                 | 
 | `random`    |                   | displays a random quote                                                           |
 | `help`      |                   | displays configured help message (by default similiar to this one)                |
 | `terms`     |                   | displays terms and conditions for using the tip bot                               |
