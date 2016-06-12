@@ -32,6 +32,8 @@ var joke = (settings.joke.url),
 var allcoin = (settings.allcoin.url),
     allcoin2 = (settings.allcoin2.url),
     cryptsy = (settings.cryptsy.url),
+    bleutrade = (settings.bleutrade.url),
+    cryptonator = (settings.cryptonator.url),
     btce = (settings.btc.url),
     bittrex = (settings.bittrex.url),
     bittrex2 = (settings.bittrex2.url);
@@ -80,6 +82,8 @@ winston.info('Connecting to the server...');
 var client = new irc.Client(settings.connection.host, settings.login.nickname, {
     port: settings.connection.port,
     secure: settings.connection.secure,
+    sasl: settings.connection.sasl,
+    password: settings.connection.sasl_password,
     channels: settings.channels,
     userName: settings.login.username,
     realName: settings.login.realname,
@@ -249,9 +253,10 @@ client.addListener('registered', function(message) {
 client.addListener('error', function(message) {
     winston.error('Received an error from IRC network: ', message);
 });
-
-var locks = [];
+var last_active = {};
+var locks         = [];
 client.addListener('message', function(from, channel, message) {
+	last_active[from] = Date.now();
     var match = message.match(/^(!?)(\S+)/);
     if (match === null) return;
     var prefix = match[1];
@@ -314,12 +319,13 @@ client.addListener('message', function(from, channel, message) {
                 } else {
                     max = Math.floor(max);
                 }
+
                 // lock
                 if(locks.hasOwnProperty(from.toLowerCase()) && locks[from.toLowerCase()]) return;
                 locks[from.toLowerCase()] = true;
+
                 coin.getBalance(from.toLowerCase(), settings.coin.min_confirmations, function(err, balance) {
                     if (err) {
-                        locks[from.toLowerCase()] = null;
                         winston.error('Error in !tip command.', err);
                         client.say(channel, settings.messages.error.expand({
                             name: from
@@ -330,6 +336,14 @@ client.addListener('message', function(from, channel, message) {
 
                     if (balance >= amount) {
                         client.getNames(channel, function(names) {
+						// rain only on nicknames active within the last x seconds
+							if(settings.commands.rain.rain_on_last_active) {
+								for (var i = names.length - 1; i >= 0; i--) {
+									if(!last_active.hasOwnProperty(names[i]) || last_active[names[i]] + settings.commands.rain.rain_on_last_active * 1000 < Date.now()) {
+										names.splice(i, 1);
+									}
+								};
+							}
                             // remove tipper from the list
                             names.splice(names.indexOf(from), 1);
                             names.splice(names.indexOf(client.nick), 1);
@@ -343,7 +357,7 @@ client.addListener('message', function(from, channel, message) {
                             names = names.slice(0, max);
 
                             if (amount / max < settings.coin.min_rain) {
-                                locks[from.toLowerCase()] = null;
+                            	locks[from.toLowerCase()] = null;
                                 client.say(channel, settings.messages.rain_too_small.expand({
                                     from: from,
                                     amount: amount,
@@ -354,8 +368,8 @@ client.addListener('message', function(from, channel, message) {
 
                             for (var i = 0; i < names.length; i++) {
                                 coin.move(from.toLowerCase(), names[i].toLowerCase(), amount / max, function(err, reply) {
-                                    if(i == names.length) locks[from.toLowerCase()] = null;
-                                    if (err || !reply) {
+                                	if(i == names.length) locks[from.toLowerCase()] = null;
+                                	if (err || !reply) {
                                         winston.error('Error in !tip command', err);
                                         return;
                                     }
@@ -365,11 +379,10 @@ client.addListener('message', function(from, channel, message) {
                             client.say(channel, settings.messages.rain.expand({
                                 name: from,
                                 amount: amount / max,
-                                list: whole_channel ? 'the whole channel' : names.join(', ')
+                                list: (whole_channel && !settings.commands.rain.rain_on_last_active) ? 'the whole channel' : names.join(', ')
                             }));
                         });
                     } else {
-                        locks[from.toLowerCase()] = null;
                         winston.info('%s tried to tip %s %d, but has only %d', from, to, amount, balance);
                         client.say(channel, settings.messages.no_funds.expand({
                             name: from,
@@ -440,6 +453,78 @@ client.addListener('message', function(from, channel, message) {
                             coin: settings.cryptsy.coin,
                             price: info.return.markets.FST.lasttradeprice,
                             volume: info.return.markets.FST.volume
+                        }));
+                    });
+                } else {
+                    return;
+                }
+                break;
+
+            case 'bleutrade':
+                if (settings.bleutrade.enabled) {
+                    var user = from.toLowerCase();
+                    tipbot.sendCustomRequest(bleutrade, function(data, err) {
+                        if (err) {
+                            winston.error('Error in !bleutrade command.', err);
+                            client.say(channel, settings.messages.error.expand({
+                                name: from
+                            }));
+                            return;
+                        }
+                        var info = data;
+                        winston.info(user, 'Fetched Price From Bleutrade', info.result[0].Last, info.result[0].Volume);
+                        client.say(channel, settings.messages.bleutrade.expand({
+                            name: user,
+                            coin: settings.bleutrade.coin,
+                            price: info.result[0].Last,
+                            volume: info.result[0].Volume
+                        }));
+                    });
+                } else {
+                    return;
+                }
+                break;
+
+	case 'poloniex':
+               var polourl = 'https://poloniex.com/public?command=returnTicker';
+                 var poloprice;
+  
+                 function getPoloPrice(callback) {
+                     request(polourl, function (error, response, body) {
+                         if (!error && response.statusCode == 200) {
+                         poloprice = JSON.parse(body).BTC_GRS.last;
+                     }
+                         else {poloprice = 0.0;}
+                         poloCallback();
+                     });
+                 }
+         function poloCallback() {
+             client.say(channel, "Poloniex price: " + Number(poloprice).toFixed(8) + " BTC/GRS");
+         }
+         function getPrices() {
+             getPoloPrice(poloCallback);
+         }
+         getPrices();
+         break;
+
+            case 'cryptonator':
+                if (settings.cryptonator.enabled) {
+                    var user = from.toLowerCase();
+                    tipbot.sendCustomRequest(cryptonator, function(data, err) {
+                        if (err) {
+                            winston.error('Error in !cryptonator command.', err);
+                            client.say(channel, settings.messages.error.expand({
+                                name: from
+                            }));
+                            return;
+                        }
+                        var info = data;
+                        winston.info(user, 'Fetched Price From Cryptonator', info.ticker.price, info.ticker.volume);
+                        client.say(channel, settings.messages.cryptonator.expand({
+                            name: user,
+                            coin: settings.cryptonator.coin,
+                            price: info.ticker.price,
+                            volume: info.ticker.volume
                         }));
                     });
                 } else {
@@ -558,7 +643,7 @@ client.addListener('message', function(from, channel, message) {
                     return;
                 }
                 break;
-                
+
             case 'tip':
                 var match = message.match(/^.?tip (\S+) ([\d\.]+)/);
                 if (match === null || match.length < 3) {
@@ -567,12 +652,8 @@ client.addListener('message', function(from, channel, message) {
                 }
                 var to = match[1];
                 var amount = Number(match[2]);
-                // lock
-                if(locks.hasOwnProperty(from.toLowerCase()) && locks[from.toLowerCase()]) return;
-                locks[from.toLowerCase()] = true;
 
                 if (isNaN(amount)) {
-                    locks[from.toLowerCase()] = null;
                     client.say(channel, settings.messages.invalid_amount.expand({
                         name: from,
                         amount: match[2]
@@ -581,7 +662,6 @@ client.addListener('message', function(from, channel, message) {
                 }
 
                 if (to.toLowerCase() == from.toLowerCase()) {
-                    locks[from.toLowerCase()] = null;
                     client.say(channel, settings.messages.tip_self.expand({
                         name: from
                     }));
@@ -589,7 +669,7 @@ client.addListener('message', function(from, channel, message) {
                 }
 
                 if (amount < settings.coin.min_tip) {
-                    locks[from.toLowerCase()] = null;
+                	locks[from.toLowerCase()] = null;
                     client.say(channel, settings.messages.tip_too_small.expand({
                         from: from,
                         to: to,
@@ -597,10 +677,15 @@ client.addListener('message', function(from, channel, message) {
                     }));
                     return;
                 }
+
+                // lock
+                if(locks.hasOwnProperty(from.toLowerCase()) && locks[from.toLowerCase()]) return;
+                locks[from.toLowerCase()] = true;
+
                 // check balance with min. 5 confirmations
                 coin.getBalance(from.toLowerCase(), settings.coin.min_confirmations, function(err, balance) {
                     if (err) {
-                        locks[from.toLowerCase()] = null;
+                    	locks[from.toLowerCase()] = null;
                         winston.error('Error in !tip command.', err);
                         client.say(channel, settings.messages.error.expand({
                             name: from
@@ -611,8 +696,8 @@ client.addListener('message', function(from, channel, message) {
 
                     if (balance >= amount) {
                         coin.send('move', from.toLowerCase(), to.toLowerCase(), amount, function(err, reply) {
-                            locks[from.toLowerCase()] = null;
-                            if (err || !reply) {
+                        	locks[from.toLowerCase()] = null;
+                        	if (err || !reply) {
                                 winston.error('Error in !tip command', err);
                                 client.say(channel, settings.messages.error.expand({
                                     name: from
@@ -628,7 +713,7 @@ client.addListener('message', function(from, channel, message) {
                             }));
                         });
                     } else {
-                        locks[from.toLowerCase()] = null;
+                    	locks[from.toLowerCase()] = null;
                         winston.info('%s tried to tip %s %d, but has only %d', from, to, amount, balance);
                         client.say(channel, settings.messages.no_funds.expand({
                             name: from,
@@ -833,27 +918,6 @@ client.addListener('message', function(from, channel, message) {
                     });
                 });
                 break;
-            case 'price':
-                var polourl = 'https://poloniex.com/public?command=returnTicker';
-                var poloprice;
- 
-                function getPoloPrice(callback) {
-                    request(polourl, function (error, response, body) {
-                        if (!error && response.statusCode == 200) {
-                        poloprice = JSON.parse(body).BTC_GRS.last;
-                    }
-                        else {poloprice = 0.0;}
-                        poloCallback();
-                    });
-                }
-                function poloCallback() {
-                client.say(channel, "Poloniex price: " + Number(poloprice).toFixed(8) + " BTC/GRS");
-                }
-                function getPrices() {
-                getPoloPrice(poloCallback);
-                }
-                getPrices();
-                break;
 
             case 'withdraw':
                 var match = message.match(/^.?withdraw (\S+)$/);
@@ -939,3 +1003,4 @@ client.addListener('message', function(from, channel, message) {
             }
       });
 });
+
